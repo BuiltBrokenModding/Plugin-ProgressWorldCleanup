@@ -17,7 +17,7 @@ import java.util.*;
 public final class ThreadWorldScanner extends Thread
 {
     /** Delay before re-scanning a chunk that has already been scanned */
-    public static final int SCAN_DELAY = 10 * 60 * 1000; //10 mins
+    public static final int SCAN_DELAY = 2 * 60 * 1000; //10 mins
 
     /** Checked in all loops in order to kill the thread if false */
     public boolean shouldRun = true;
