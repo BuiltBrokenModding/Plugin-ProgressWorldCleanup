@@ -1,11 +1,13 @@
 package com.builtbroken.worldcleanup;
 
+import com.builtbroken.worldcleanup.obj.RemoveBlock;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.TickEvent;
 import cpw.mods.fml.relauncher.Side;
-import net.minecraft.block.Block;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Queue;
 
 /**
  * @see <a href="https://github.com/BuiltBrokenModding/VoltzEngine/blob/development/license.md">License</a> for what you can and can't do with the code.
@@ -20,9 +22,11 @@ public class TickHandler
     //TODO add config
     //TODO add commands (Add(Block), Remove(Block), Pause(time), start(start this instance only), stop(stop this instance only), disable(disable until enabled), enable Trigger(chunk), disable(world), enable(world)
     //TODO add replace object instead of just remove, eg replace greg furnace with te furnace
-    public final List<Block> blocksToRemove = new ArrayList();
+    //TODO add conditional removals (Fire on logs, Fire on leaves, Taint in world 3, TE furnace with power over 1M, Tile matching NBT)
+
     /** Current removal map being processed */
     public HashMap<Integer, Queue<RemoveBlock>> removalMap = new HashMap();
+
     /** Dump from the thread currently processing the world */
     public HashMap<Integer, Queue<RemoveBlock>> removalMapDump = new HashMap();
 
