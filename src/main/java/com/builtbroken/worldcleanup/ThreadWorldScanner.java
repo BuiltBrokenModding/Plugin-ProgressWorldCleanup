@@ -54,7 +54,7 @@ public final class ThreadWorldScanner extends Thread
                 {
                     Chunk chunk = que.poll();
                     ChunkCoordIntPair pair = chunk.getChunkCoordIntPair();
-                    if(lastScanned.containsKey(pair) || (System.currentTimeMillis() - lastScanned.get(pair)) >= SCAN_DELAY)
+                    if(!lastScanned.containsKey(pair) || (System.currentTimeMillis() - lastScanned.get(pair)) >= SCAN_DELAY)
                     {
                         lastScanned.put(pair, System.currentTimeMillis());
                         List<RemoveBlock> removeList = new ArrayList();
@@ -73,7 +73,7 @@ public final class ThreadWorldScanner extends Thread
                                             Block block = chunk.getBlock(x, y, z);
                                             if (Plugin.blocksToRemove.contains(block))
                                             {
-                                                removeList.add(new RemoveBlock(chunk.xPosition << 4, y, chunk.zPosition << 4)); //TODO save previous block and meta to ensure sanity
+                                                removeList.add(new RemoveBlock((chunk.xPosition << 4) + x, y, (chunk.zPosition << 4) + z)); //TODO save previous block and meta to ensure sanity
                                             }
                                         }
                                     }

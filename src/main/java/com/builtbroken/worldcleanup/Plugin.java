@@ -7,6 +7,7 @@ import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.event.FMLServerStartingEvent;
 import cpw.mods.fml.common.event.FMLServerStoppingEvent;
 import net.minecraft.block.Block;
+import net.minecraft.init.Blocks;
 import net.minecraftforge.common.config.Configuration;
 
 import java.io.File;
@@ -44,7 +45,7 @@ public class Plugin
     public void postInit(FMLPostInitializationEvent event)
     {
         config.load();
-        String removeBlocks = config.getString("BlocksToRemove", Configuration.CATEGORY_GENERAL, "ThaumicTinkerer:fireOrder,ThaumicTinkerer:fireAir,ThaumicTinkerer:fireEarth,ThaumicTinkerer:fireChaos,ThaumicTinkerer:fireFire,ThaumicTinkerer:fireWater,AncientWarfareAutomation:windmill_blade", "Add blocks to the list separated by a ',', any block in the list will be removed from the world over time.");
+        String removeBlocks = config.getString("BlocksToRemove", Configuration.CATEGORY_GENERAL, "ThaumicTinkerer:fireOrder,ThaumicTinkerer:fireAir,ThaumicTinkerer:fireEarth,ThaumicTinkerer:fireChaos,ThaumicTinkerer:fireFire,ThaumicTinkerer:fireWater,AncientWarfareAutomation:windmill_blade,minecraft:tnt", "Add blocks to the list separated by a ',', any block in the list will be removed from the world over time.");
         if(removeBlocks != null)
         {
             removeBlocks = removeBlocks.trim();
@@ -58,7 +59,7 @@ public class Plugin
                     if(!name.isEmpty())
                     {
                         Object object = Block.blockRegistry.getObject(name);
-                        if(object != null && object instanceof Block)
+                        if(object != null && object instanceof Block && object != Blocks.air)
                         {
                             blocksToRemove.add((Block) object);
                         }

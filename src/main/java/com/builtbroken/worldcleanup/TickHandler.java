@@ -45,6 +45,7 @@ public class TickHandler
                 ticks++;
                 if (ticks % 1000 == 0)
                 {
+                    ticks = 0;
                     synchronized (removalMapDump)
                     {
                         for (Map.Entry<Integer, Queue<RemoveBlock>> entry : removalMapDump.entrySet())
@@ -69,7 +70,7 @@ public class TickHandler
             if (removalMap.containsKey(event.world.provider.dimensionId))
             {
                 Queue<RemoveBlock> list = removalMap.get(event.world.provider.dimensionId);
-                for (int i = 0; i < 20 && list.isEmpty(); i++)
+                for (int i = 0; i < 20 && !list.isEmpty(); i++)
                 {
                     if (!list.isEmpty())
                     {
