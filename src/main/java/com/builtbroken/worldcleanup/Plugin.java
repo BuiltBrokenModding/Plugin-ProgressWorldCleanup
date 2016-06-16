@@ -76,7 +76,7 @@ public final class Plugin
         serverCommandManager.registerCommand(new CommandPWC());
 
         scanner = new ThreadWorldScanner();
-        if (!blocksToRemove.isEmpty())
+        if (!blocksToRemove.isEmpty() || !blocksToReplace.isEmpty() || !blockMetaToReplace.isEmpty())
         {
             scanner.startScanner();
         }
