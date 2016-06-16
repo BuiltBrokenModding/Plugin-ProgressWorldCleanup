@@ -38,74 +38,82 @@ public final class ThreadWorldScanner extends Thread
     {
         while (shouldRun)
         {
-            if (world() instanceof WorldServer)
+            try
             {
-                WorldServer world = (WorldServer) world();
-
-                HashMap<ChunkCoordIntPair, Long> lastScanned = lastScanTimes.get(currentScanningWorld);
-                if(lastScanned == null)
+                if (world() instanceof WorldServer)
                 {
-                    lastScanned = new HashMap();
-                }
+                    WorldServer world = (WorldServer) world();
 
-                Queue<Chunk> que = new LinkedList();
-                que.addAll(world.theChunkProviderServer.loadedChunks);
-                while (!que.isEmpty() && shouldRun)
-                {
-                    Chunk chunk = que.poll();
-                    ChunkCoordIntPair pair = chunk.getChunkCoordIntPair();
-                    if(!lastScanned.containsKey(pair) || (System.currentTimeMillis() - lastScanned.get(pair)) >= SCAN_DELAY)
+                    HashMap<ChunkCoordIntPair, Long> lastScanned = lastScanTimes.get(currentScanningWorld);
+                    if (lastScanned == null)
                     {
-                        lastScanned.put(pair, System.currentTimeMillis());
-                        List<RemoveBlock> removeList = new ArrayList();
-                        try
+                        lastScanned = new HashMap();
+                    }
+
+                    Queue<Chunk> que = new LinkedList();
+                    que.addAll(world.theChunkProviderServer.loadedChunks);
+                    while (!que.isEmpty() && shouldRun)
+                    {
+                        Chunk chunk = que.poll();
+                        ChunkCoordIntPair pair = chunk.getChunkCoordIntPair();
+                        if (!lastScanned.containsKey(pair) || (System.currentTimeMillis() - lastScanned.get(pair)) >= SCAN_DELAY)
                         {
-                            if (chunk.isChunkLoaded && chunk.isTerrainPopulated)
+                            lastScanned.put(pair, System.currentTimeMillis());
+                            List<RemoveBlock> removeList = new ArrayList();
+                            try
                             {
-                                int[] heightMap = chunk.heightMap;
-                                for (int x = 0; x < 16 && shouldRun; x++)
+                                if (chunk.isChunkLoaded && chunk.isTerrainPopulated)
                                 {
-                                    for (int z = 0; z < 16 && shouldRun; z++)
+                                    int[] heightMap = chunk.heightMap;
+                                    for (int x = 0; x < 16 && shouldRun; x++)
                                     {
-                                        int y = heightMap[z << 4 | x];
-                                        for (; y >= 0 && shouldRun; y--)
+                                        for (int z = 0; z < 16 && shouldRun; z++)
                                         {
-                                            Block block = chunk.getBlock(x, y, z);
-                                            if (Plugin.blocksToRemove.contains(block))
+                                            int y = heightMap[z << 4 | x];
+                                            for (; y >= 0 && shouldRun; y--)
                                             {
-                                                removeList.add(new RemoveBlock((chunk.xPosition << 4) + x, y, (chunk.zPosition << 4) + z)); //TODO save previous block and meta to ensure sanity
+                                                Block block = chunk.getBlock(x, y, z);
+                                                if (Plugin.blocksToRemove.contains(block))
+                                                {
+                                                    removeList.add(new RemoveBlock((chunk.xPosition << 4) + x, y, (chunk.zPosition << 4) + z)); //TODO save previous block and meta to ensure sanity
+                                                }
                                             }
                                         }
                                     }
                                 }
                             }
-                        }
-                        catch (Exception e)
-                        {
-                            System.out.println("Failed to scan chunk " + chunk);
-                            e.printStackTrace();
-                        }
-                        synchronized (Plugin.handler.removalMapDump)
-                        {
-                            if (Plugin.handler.removalMapDump.containsKey(currentScanningWorld))
+                            catch (Exception e)
                             {
-                                Queue d = Plugin.handler.removalMapDump.get(currentScanningWorld);
-                                d.addAll(removeList); //TODO ensure it doesn't contain block
-                                Plugin.handler.removalMapDump.put(currentScanningWorld, d);
+                                System.out.println("Failed to scan chunk " + chunk);
+                                e.printStackTrace();
                             }
-                            else
+                            synchronized (Plugin.handler.removalMapDump)
                             {
-                                Queue d = new LinkedList();
-                                d.addAll(removeList); //TODO ensure it doesn't contain block
-                                Plugin.handler.removalMapDump.put(currentScanningWorld, d);
+                                if (Plugin.handler.removalMapDump.containsKey(currentScanningWorld))
+                                {
+                                    Queue d = Plugin.handler.removalMapDump.get(currentScanningWorld);
+                                    d.addAll(removeList); //TODO ensure it doesn't contain block
+                                    Plugin.handler.removalMapDump.put(currentScanningWorld, d);
+                                }
+                                else
+                                {
+                                    Queue d = new LinkedList();
+                                    d.addAll(removeList); //TODO ensure it doesn't contain block
+                                    Plugin.handler.removalMapDump.put(currentScanningWorld, d);
+                                }
                             }
                         }
                     }
+                    lastScanTimes.put(currentScanningWorld, lastScanned);
                 }
-                lastScanTimes.put(currentScanningWorld, lastScanned);
+                nextWorld(); //TODO maybe pause? TODO slow down if CPU usage is high TODO stop if dump is too full
             }
-            nextWorld(); //TODO maybe pause? TODO slow down if CPU usage is high TODO stop if dump is too full
+            catch (Exception e)
+            {
+                Plugin.logger().error("Scanned thread has experience an unexpected error, but has recovered", e);
+            }
         }
+        Plugin.logger().info("Scanner Thread has stopped");
     }
 
     private World world()
@@ -122,5 +130,25 @@ public final class ThreadWorldScanner extends Thread
     private void nextWorld()
     {
         //TODO next world in list of worlds
+    }
+
+    public void startScanner()
+    {
+        shouldRun = true;
+        if(!isAlive())
+        {
+            start();
+        }
+    }
+
+    public void stopScanner()
+    {
+        shouldRun = false;
+    }
+
+    public void kill()
+    {
+        stopScanner();
+        lastScanTimes.clear();
     }
 }

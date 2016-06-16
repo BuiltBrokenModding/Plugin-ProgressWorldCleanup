@@ -31,7 +31,7 @@ public class TickHandler
     public HashMap<Integer, Queue<RemoveBlock>> removalMapDump = new HashMap();
 
     private int ticks = 0;
-    private final int blocksRemovedPerTick = 20; //TODO add config, per world TODO accelerate when TPS is high, slow when TPS is low
+    public static int blocksRemovedPerTick = 20; //TODO add config, per world TODO accelerate when TPS is high, slow when TPS is low
 
     @SubscribeEvent
     public void onWorldTickPost(TickEvent.WorldTickEvent event)
@@ -70,7 +70,7 @@ public class TickHandler
             if (removalMap.containsKey(event.world.provider.dimensionId))
             {
                 Queue<RemoveBlock> list = removalMap.get(event.world.provider.dimensionId);
-                for (int i = 0; i < 20 && !list.isEmpty(); i++)
+                for (int i = 0; i < blocksRemovedPerTick && !list.isEmpty(); i++)
                 {
                     if (!list.isEmpty())
                     {
