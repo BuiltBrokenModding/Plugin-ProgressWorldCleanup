@@ -22,7 +22,7 @@ public final class ThreadWorldScanner extends Thread
     /** Checked in all loops in order to kill the thread if false */
     public boolean shouldRun = true;
 
-    /** Current world being scanned, using dim id to be thread safe*/
+    /** Current world being scanned, using dim id to be thread safe */
     private int currentScanningWorld = 0;
 
     /** Map of worlds, to maps of chunks and when they were scanned last( in milli-seconds) */
@@ -75,7 +75,18 @@ public final class ThreadWorldScanner extends Thread
                                                 Block block = chunk.getBlock(x, y, z);
                                                 if (Plugin.blocksToRemove.contains(block))
                                                 {
-                                                    removeList.add(new RemoveBlock((chunk.xPosition << 4) + x, y, (chunk.zPosition << 4) + z)); //TODO save previous block and meta to ensure sanity
+                                                    if (Plugin.blockMetaToRemove.containsKey(block))
+                                                    {
+                                                        List<Integer> metaValues = Plugin.blockMetaToRemove.get(block);
+                                                        if (metaValues.contains(chunk.getBlockMetadata(x, y, z)))
+                                                        {
+                                                            removeList.add(new RemoveBlock(world, (chunk.xPosition << 4) + x, y, (chunk.zPosition << 4) + z));
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        removeList.add(new RemoveBlock(world, (chunk.xPosition << 4) + x, y, (chunk.zPosition << 4) + z));
+                                                    }
                                                 }
                                             }
                                         }
@@ -135,7 +146,7 @@ public final class ThreadWorldScanner extends Thread
     public void startScanner()
     {
         shouldRun = true;
-        if(!isAlive())
+        if (!isAlive())
         {
             start();
         }

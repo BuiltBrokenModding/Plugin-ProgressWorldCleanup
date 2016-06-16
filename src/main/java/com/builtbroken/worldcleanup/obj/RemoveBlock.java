@@ -1,5 +1,6 @@
 package com.builtbroken.worldcleanup.obj;
 
+import net.minecraft.block.Block;
 import net.minecraft.world.World;
 
 /**
@@ -10,11 +11,17 @@ public class RemoveBlock
 {
     public final int x, y, z;
 
-    public RemoveBlock(int x, int y, int z)
+    public final Block prevBlock;
+    public final int prevMeta;
+
+    public RemoveBlock(World world, int x, int y, int z)
     {
         this.x = x;
         this.y = y;
         this.z = z;
+
+        prevBlock = world.getBlock(x, y, z);
+        prevMeta = world.getBlockMetadata(x, y, z);
     }
 
     /**
@@ -22,9 +29,9 @@ public class RemoveBlock
      *
      * @return true if the previous block data is the same as the current
      */
-    public boolean isValid()
+    public boolean isValid(World world)
     {
-        return true; //TODO check to ensure previous block matches expected value to avoid replacing blocks players have edited
+        return world.getBlock(x, y, z) == prevBlock && world.getBlockMetadata(x, y, z) == prevMeta;
     }
 
     /**

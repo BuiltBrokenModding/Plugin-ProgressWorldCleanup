@@ -87,7 +87,7 @@ public final class Plugin
         logger.info("Loading blocks from config...");
         config.load();
         TickHandler.blocksRemovedPerTick = config.getInt("BlocksToEditPerTick", Configuration.CATEGORY_GENERAL, TickHandler.blocksRemovedPerTick, 0, 10000, "Number of blocks to edit per tick, there are 20 ticks in a second. Keep this low to improve performance, increase to speed up the effect of the mod.");
-        String removeBlocks = config.getString("BlocksToRemove", Configuration.CATEGORY_GENERAL, "ThaumicTinkerer:fireOrder,ThaumicTinkerer:fireAir,ThaumicTinkerer:fireEarth,ThaumicTinkerer:fireChaos,ThaumicTinkerer:fireFire,ThaumicTinkerer:fireWater,AncientWarfareAutomation:windmill_blade,minecraft:tnt", "Add blocks to the list separated by a ',', any block in the list will be removed from the world over time.");
+        String removeBlocks = config.getString("BlocksToRemove", Configuration.CATEGORY_GENERAL, "ThaumicTinkerer:fireOrder,ThaumicTinkerer:fireAir,ThaumicTinkerer:fireEarth,ThaumicTinkerer:fireChaos,ThaumicTinkerer:fireFire,ThaumicTinkerer:fireWater,AncientWarfareAutomation:windmill_blade,minecraft:tnt", "Add blocks to the list separated by a ',', any block in the list will be removed from the world over time. Using @ at the end of the block name to market meta values, meta is between 0 - 15. Several values can be listed using a -, ex 1-10. OreNames can be used using *Ore:Name, ex *Ore:Log");
         if (removeBlocks != null)
         {
             removeBlocks = removeBlocks.trim();
@@ -156,22 +156,29 @@ public final class Plugin
     private Block addBlockToRemove(String name, int meta)
     {
         Block block = addBlockToRemove(name);
-        List<Integer> list = null;
-        if (!blockMetaToRemove.containsKey(block))
+        if(meta >= 0 && meta < 16)
         {
-            list = blockMetaToRemove.get(block);
-        }
-        if (list == null)
-        {
-            list = new ArrayList();
-        }
-        if (!list.contains(meta))
-        {
-            list.add(meta);
+            List<Integer> list = null;
+            if (!blockMetaToRemove.containsKey(block))
+            {
+                list = blockMetaToRemove.get(block);
+            }
+            if (list == null)
+            {
+                list = new ArrayList();
+            }
+            if (!list.contains(meta))
+            {
+                list.add(meta);
+            }
+            else
+            {
+                logger.error("Meta value[" + meta + "] for block " + block + " is already contained.");
+            }
         }
         else
         {
-            logger.error("Meta value[" + meta + "] for block " + block + " is already contained.");
+            logger.error("Meta value[" + meta + "] for block " + block + " is invalid, it must be from 0 to 15.");
         }
         return block;
     }
@@ -181,8 +188,11 @@ public final class Plugin
         Object object = Block.blockRegistry.getObject(name);
         if (object != null && object instanceof Block && object != Blocks.air)
         {
-            blocksToRemove.add((Block) object);
-            logger.info("\tAdded: " + object);
+            if(!blocksToRemove.contains(object))
+            {
+                blocksToRemove.add((Block) object);
+                logger.info("\tAdded: " + object);
+            }
             return (Block) object;
         }
         else

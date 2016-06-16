@@ -75,7 +75,7 @@ public class TickHandler
                     if (!list.isEmpty())
                     {
                         RemoveBlock block = list.poll();
-                        if (block.isValid())
+                        if (block.isValid(event.world))
                         {
                             block.remove(event.world);
                         }
