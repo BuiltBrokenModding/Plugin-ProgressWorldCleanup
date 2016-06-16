@@ -91,8 +91,9 @@ public final class Plugin
      */
     public void loadConfig()
     {
-        logger.info("Loading blocks from config...");
         config.load();
+        ThreadWorldScanner.SCAN_DELAY = config.getInt("ChunkScanDelay", Configuration.CATEGORY_GENERAL, ThreadWorldScanner.SCAN_DELAY, 0, Integer.MAX_VALUE, "Delay in ticks, 20 ticks a second, to wait before rescanning a previously scanned chunk. Delay is not saved on restart so is reset to zero per chunk each time a world loads. Only after a chunk is scanned does the count down start.");
+        logger.info("Loading blocks from config...");
         logger.info("Loading remove list...");
         TickHandler.blocksRemovedPerTick = config.getInt("BlocksToEditPerTick", Configuration.CATEGORY_GENERAL, TickHandler.blocksRemovedPerTick, 0, 10000, "Number of blocks to edit per tick, there are 20 ticks in a second. Keep this low to improve performance, increase to speed up the effect of the mod.");
         String removeBlocks = config.getString("BlocksToRemove", Configuration.CATEGORY_GENERAL, "ThaumicTinkerer:fireOrder,ThaumicTinkerer:fireAir,ThaumicTinkerer:fireEarth,ThaumicTinkerer:fireChaos,ThaumicTinkerer:fireFire,ThaumicTinkerer:fireWater,AncientWarfareAutomation:windmill_blade,minecraft:tnt", "Add blocks to the list separated by a ',', any block in the list will be removed from the world over time. Using @ at the end of the block name to market meta values, meta is between 0 - 15. Several values can be listed using a -, ex 1-10. OreNames can be used using *Ore:Name, ex *Ore:Log");

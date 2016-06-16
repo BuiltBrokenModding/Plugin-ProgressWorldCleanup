@@ -20,7 +20,7 @@ public class TickHandler
     //TODO add registry system
     //TODO add API
     //TODO add config
-    //TODO add commands (Add(Block), Remove(Block), Pause(time), start(start this instance only), stop(stop this instance only), disable(disable until enabled), enable Trigger(chunk), disable(world), enable(world)
+    //TODO add commands (Add(Block), Remove(Block), Pause(time), disable(disable until enabled), enable, Trigger(chunk), disable(world), enable(world)
     //TODO add replace object instead of just remove, eg replace greg furnace with te furnace
     //TODO add conditional removals (Fire on logs, Fire on leaves, Taint in world 3, TE furnace with power over 1M, Tile matching NBT)
 
