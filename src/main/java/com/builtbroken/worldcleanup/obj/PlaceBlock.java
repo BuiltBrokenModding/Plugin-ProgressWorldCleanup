@@ -27,6 +27,14 @@ public class PlaceBlock extends RemoveBlock
     }
 
     @Override
+    public boolean isValid(World world)
+    {
+        Block existingBlock = world.getBlock(x, y, z);
+        int existingMeta = world.getBlockMetadata(x, y, z);
+        return existingBlock == prevBlock && existingMeta == prevMeta && (existingBlock != newBlock || existingMeta != newMeta); //Avoid placing the same block causing update ticks to trigger, eg avoid induce lag
+    }
+
+    @Override
     public void doAction(World world)
     {
         world.setBlock(x, y, z, newBlock, newMeta, 3);

@@ -93,6 +93,7 @@ public final class Plugin
     {
         logger.info("Loading blocks from config...");
         config.load();
+        logger.info("Loading remove list...");
         TickHandler.blocksRemovedPerTick = config.getInt("BlocksToEditPerTick", Configuration.CATEGORY_GENERAL, TickHandler.blocksRemovedPerTick, 0, 10000, "Number of blocks to edit per tick, there are 20 ticks in a second. Keep this low to improve performance, increase to speed up the effect of the mod.");
         String removeBlocks = config.getString("BlocksToRemove", Configuration.CATEGORY_GENERAL, "ThaumicTinkerer:fireOrder,ThaumicTinkerer:fireAir,ThaumicTinkerer:fireEarth,ThaumicTinkerer:fireChaos,ThaumicTinkerer:fireFire,ThaumicTinkerer:fireWater,AncientWarfareAutomation:windmill_blade,minecraft:tnt", "Add blocks to the list separated by a ',', any block in the list will be removed from the world over time. Using @ at the end of the block name to market meta values, meta is between 0 - 15. Several values can be listed using a -, ex 1-10. OreNames can be used using *Ore:Name, ex *Ore:Log");
         if (removeBlocks != null)
@@ -156,6 +157,59 @@ public final class Plugin
             }
         }
 
+        logger.info("Loading replace list...");
+        removeBlocks = config.getString("BlocksToRemove", Configuration.CATEGORY_GENERAL, "", "Replaces one block with another block, each entry must use this format [modName:block@meta > modName:block@meta] or [modName:block > modName:block@meta] in order to work. First part is the block to replace, second is what block to replace it with. Separate each entry with a ',' as a list, avoid spaces as well.");
+        removeBlocks.trim();
+        if(removeBlocks != null && removeBlocks.isEmpty())
+        {
+            String[] blocksByNames = removeBlocks.split(",");
+            for (final String s : blocksByNames)
+            {
+                try
+                {
+                    String name = s.trim().replace("[", "").replace("]", "");
+                    String[] split = name.split(">");
+
+                    String blockOne = split[0].trim();
+                    String blockTwo = split[1].trim();
+
+                    int meta1 = -1;
+                    int meta2 = 0;
+
+                    if(blockOne.contains("@"))
+                    {
+                        split = blockOne.split("@");
+                        blockOne = split[0].trim();
+                        meta1 = Integer.parseInt(split[1].trim());
+                    }
+
+
+                    if(blockTwo.contains("@"))
+                    {
+                        split = blockTwo.split("@");
+                        blockTwo = split[0].trim();
+                        meta2 = Integer.parseInt(split[1].trim());
+                    }
+
+                    Block block1 = getBlock(blockOne);
+                    Block block2 = getBlock(blockTwo);
+
+                    if(meta1 == -1)
+                    {
+                        blocksToReplace.put(block1, new BlockMeta(block2, meta2));
+                    }
+                    else
+                    {
+                        blockMetaToReplace.put(new BlockMeta(block1, meta1), new BlockMeta(block2, meta2));
+                    }
+                }
+                catch (Exception e)
+                {
+                    logger.error("Failed to process entry " + s, e);
+                }
+            }
+        }
+
         config.save();
         logger.info("Done...");
     }
@@ -193,7 +247,7 @@ public final class Plugin
     private Block addBlockToRemove(String name)
     {
         Object object = Block.blockRegistry.getObject(name);
-        if (object != null && object instanceof Block && object != Blocks.air)
+        if (object instanceof Block && object != Blocks.air) //air is the same as null
         {
             if(!blocksToRemove.contains(object))
             {
@@ -205,6 +259,16 @@ public final class Plugin
         else
         {
             logger.error("\tError: " + name + " was not found in the block list");
+        }
+        return null;
+    }
+
+    private Block getBlock(String name)
+    {
+        Object object = Block.blockRegistry.getObject(name);
+        if (object instanceof Block && object != Blocks.air) //air is the same as null
+        {
+            return (Block) object;
         }
         return null;
     }
