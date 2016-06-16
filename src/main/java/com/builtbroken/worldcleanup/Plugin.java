@@ -1,6 +1,7 @@
 package com.builtbroken.worldcleanup;
 
 import com.builtbroken.worldcleanup.command.CommandPWC;
+import com.builtbroken.worldcleanup.obj.BlockMeta;
 import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.event.FMLPostInitializationEvent;
@@ -39,7 +40,13 @@ public final class Plugin
 
     /** List of blocks to remove, is multi-threaded so ensure thread safe actions */
     public static final List<Block> blocksToRemove = new ArrayList();
+    /** Map of blocks to meta values to remove, is multi-threaded so ensure thread safe actions */
     public static final HashMap<Block, List<Integer>> blockMetaToRemove = new HashMap();
+
+    /** Map of block & meta pairs to replace, is multi-threaded so ensure thread safe actions */
+    public static final HashMap<Block, BlockMeta> blocksToReplace = new HashMap();
+    /** Map of block & meta pairs to replace, is multi-threaded so ensure thread safe actions */
+    public static final HashMap<BlockMeta, BlockMeta> blockMetaToReplace = new HashMap();
 
     @Mod.Instance("progressiveworldcleanup")
     public static Plugin instance;

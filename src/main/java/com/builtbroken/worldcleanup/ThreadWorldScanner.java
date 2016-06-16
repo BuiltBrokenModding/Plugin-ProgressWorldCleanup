@@ -1,5 +1,7 @@
 package com.builtbroken.worldcleanup;
 
+import com.builtbroken.worldcleanup.obj.BlockMeta;
+import com.builtbroken.worldcleanup.obj.PlaceBlock;
 import com.builtbroken.worldcleanup.obj.RemoveBlock;
 import net.minecraft.block.Block;
 import net.minecraft.world.ChunkCoordIntPair;
@@ -59,7 +61,7 @@ public final class ThreadWorldScanner extends Thread
                         if (!lastScanned.containsKey(pair) || (System.currentTimeMillis() - lastScanned.get(pair)) >= SCAN_DELAY)
                         {
                             lastScanned.put(pair, System.currentTimeMillis());
-                            List<RemoveBlock> removeList = new ArrayList();
+                            List<RemoveBlock> worldEditList = new ArrayList();
                             try
                             {
                                 if (chunk.isChunkLoaded && chunk.isTerrainPopulated)
@@ -73,20 +75,31 @@ public final class ThreadWorldScanner extends Thread
                                             for (; y >= 0 && shouldRun; y--)
                                             {
                                                 Block block = chunk.getBlock(x, y, z);
+                                                int meta = chunk.getBlockMetadata(x, y, z);
+                                                BlockMeta blockMeta = new BlockMeta(block, meta);
+
                                                 if (Plugin.blocksToRemove.contains(block))
                                                 {
                                                     if (Plugin.blockMetaToRemove.containsKey(block))
                                                     {
                                                         List<Integer> metaValues = Plugin.blockMetaToRemove.get(block);
-                                                        if (metaValues.contains(chunk.getBlockMetadata(x, y, z)))
+                                                        if (metaValues.contains(meta))
                                                         {
-                                                            removeList.add(new RemoveBlock(world, (chunk.xPosition << 4) + x, y, (chunk.zPosition << 4) + z));
+                                                            worldEditList.add(new RemoveBlock(world, (chunk.xPosition << 4) + x, y, (chunk.zPosition << 4) + z));
                                                         }
                                                     }
                                                     else
                                                     {
-                                                        removeList.add(new RemoveBlock(world, (chunk.xPosition << 4) + x, y, (chunk.zPosition << 4) + z));
+                                                        worldEditList.add(new RemoveBlock(world, (chunk.xPosition << 4) + x, y, (chunk.zPosition << 4) + z));
                                                     }
+                                                }
+                                                else if (Plugin.blocksToReplace.containsKey(block))
+                                                {
+                                                    worldEditList.add(new PlaceBlock(world, (chunk.xPosition << 4) + x, y, (chunk.zPosition << 4) + z, Plugin.blocksToReplace.get(block)));
+                                                }
+                                                else if (Plugin.blocksToReplace.containsKey(blockMeta))
+                                                {
+                                                    worldEditList.add(new PlaceBlock(world, (chunk.xPosition << 4) + x, y, (chunk.zPosition << 4) + z, Plugin.blockMetaToReplace.get(block)));
                                                 }
                                             }
                                         }
@@ -103,13 +116,13 @@ public final class ThreadWorldScanner extends Thread
                                 if (Plugin.handler.removalMapDump.containsKey(currentScanningWorld))
                                 {
                                     Queue d = Plugin.handler.removalMapDump.get(currentScanningWorld);
-                                    d.addAll(removeList); //TODO ensure it doesn't contain block
+                                    d.addAll(worldEditList); //TODO ensure it doesn't contain block
                                     Plugin.handler.removalMapDump.put(currentScanningWorld, d);
                                 }
                                 else
                                 {
                                     Queue d = new LinkedList();
-                                    d.addAll(removeList); //TODO ensure it doesn't contain block
+                                    d.addAll(worldEditList); //TODO ensure it doesn't contain block
                                     Plugin.handler.removalMapDump.put(currentScanningWorld, d);
                                 }
                             }

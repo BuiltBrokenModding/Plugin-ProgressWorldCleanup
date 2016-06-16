@@ -39,7 +39,7 @@ public class RemoveBlock
      *
      * @param world - world to use
      */
-    public void remove(World world)
+    public void doAction(World world)
     {
         world.setBlockToAir(x, y, z); //TODO add field for block and meta to set
     }
