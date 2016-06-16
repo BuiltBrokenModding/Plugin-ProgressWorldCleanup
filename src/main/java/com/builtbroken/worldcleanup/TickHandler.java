@@ -25,10 +25,10 @@ public class TickHandler
     //TODO add conditional removals (Fire on logs, Fire on leaves, Taint in world 3, TE furnace with power over 1M, Tile matching NBT)
 
     /** Current removal map being processed */
-    public HashMap<Integer, Queue<RemoveBlock>> removalMap = new HashMap();
+    public HashMap<Integer, Queue<RemoveBlock>> worldToActions = new HashMap();
 
     /** Dump from the thread currently processing the world */
-    public HashMap<Integer, Queue<RemoveBlock>> removalMapDump = new HashMap();
+    public HashMap<Integer, Queue<RemoveBlock>> threadInbox = new HashMap();
 
     private int ticks = 0;
     public static int blocksRemovedPerTick = 20; //TODO add config, per world TODO accelerate when TPS is high, slow when TPS is low
@@ -46,30 +46,30 @@ public class TickHandler
                 if (ticks % 1000 == 0)
                 {
                     ticks = 0;
-                    synchronized (removalMapDump)
+                    synchronized (threadInbox)
                     {
-                        for (Map.Entry<Integer, Queue<RemoveBlock>> entry : removalMapDump.entrySet())
+                        for (Map.Entry<Integer, Queue<RemoveBlock>> entry : threadInbox.entrySet())
                         {
                             if (entry.getValue() != null && !entry.getValue().isEmpty())
                             {
-                                if (removalMap.get(entry.getKey()) == null)
+                                if (worldToActions.get(entry.getKey()) == null)
                                 {
-                                    removalMap.put(entry.getKey(), entry.getValue());
+                                    worldToActions.put(entry.getKey(), entry.getValue());
                                 }
                                 else
                                 {
-                                    removalMap.get(entry.getKey()).addAll(entry.getValue());
+                                    worldToActions.get(entry.getKey()).addAll(entry.getValue());
                                 }
                             }
                         }
-                        removalMapDump.clear();
+                        threadInbox.clear();
                     }
                 }
             }
 
-            if (removalMap.containsKey(event.world.provider.dimensionId))
+            if (worldToActions.containsKey(event.world.provider.dimensionId))
             {
-                Queue<RemoveBlock> list = removalMap.get(event.world.provider.dimensionId);
+                Queue<RemoveBlock> list = worldToActions.get(event.world.provider.dimensionId);
                 for (int i = 0; i < blocksRemovedPerTick && !list.isEmpty(); i++)
                 {
                     if (!list.isEmpty())
@@ -83,7 +83,7 @@ public class TickHandler
                 }
                 if (list.isEmpty())
                 {
-                    removalMap.remove(event.world.provider.dimensionId);
+                    worldToActions.remove(event.world.provider.dimensionId);
                 }
             }
         }

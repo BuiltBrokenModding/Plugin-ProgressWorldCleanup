@@ -4,6 +4,7 @@ import com.builtbroken.worldcleanup.obj.BlockMeta;
 import com.builtbroken.worldcleanup.obj.PlaceBlock;
 import com.builtbroken.worldcleanup.obj.RemoveBlock;
 import net.minecraft.block.Block;
+import net.minecraft.init.Blocks;
 import net.minecraft.world.ChunkCoordIntPair;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldServer;
@@ -57,73 +58,79 @@ public final class ThreadWorldScanner extends Thread
                     while (!que.isEmpty() && shouldRun)
                     {
                         Chunk chunk = que.poll();
-                        ChunkCoordIntPair pair = chunk.getChunkCoordIntPair();
-                        if (!lastScanned.containsKey(pair) || (System.currentTimeMillis() - lastScanned.get(pair)) >= SCAN_DELAY)
+                        if (chunk != null)
                         {
-                            lastScanned.put(pair, System.currentTimeMillis());
-                            List<RemoveBlock> worldEditList = new ArrayList();
-                            try
+                            ChunkCoordIntPair pair = chunk.getChunkCoordIntPair();
+                            if (!lastScanned.containsKey(pair) || (System.currentTimeMillis() - lastScanned.get(pair)) >= SCAN_DELAY)
                             {
-                                if (chunk.isChunkLoaded && chunk.isTerrainPopulated)
+                                lastScanned.put(pair, System.currentTimeMillis());
+                                List<RemoveBlock> worldEditList = new ArrayList();
+                                try
                                 {
-                                    int[] heightMap = chunk.heightMap;
-                                    for (int x = 0; x < 16 && shouldRun; x++)
+                                    if (chunk.isChunkLoaded && chunk.isTerrainPopulated)
                                     {
-                                        for (int z = 0; z < 16 && shouldRun; z++)
+                                        int[] heightMap = chunk.heightMap;
+                                        for (int x = 0; x < 16 && shouldRun; x++)
                                         {
-                                            int y = heightMap[z << 4 | x];
-                                            for (; y >= 0 && shouldRun; y--)
+                                            for (int z = 0; z < 16 && shouldRun; z++)
                                             {
-                                                Block block = chunk.getBlock(x, y, z);
-                                                int meta = chunk.getBlockMetadata(x, y, z);
-                                                BlockMeta blockMeta = new BlockMeta(block, meta);
-
-                                                if (Plugin.blocksToRemove.contains(block))
+                                                int y = heightMap[z << 4 | x];
+                                                for (; y >= 0 && shouldRun; y--)
                                                 {
-                                                    if (Plugin.blockMetaToRemove.containsKey(block))
+                                                    Block block = chunk.getBlock(x, y, z);
+                                                    if(block != Blocks.air)
                                                     {
-                                                        List<Integer> metaValues = Plugin.blockMetaToRemove.get(block);
-                                                        if (metaValues.contains(meta))
+                                                        int meta = chunk.getBlockMetadata(x, y, z);
+                                                        BlockMeta blockMeta = new BlockMeta(block, meta);
+
+                                                        if (Plugin.blocksToRemove.contains(block))
                                                         {
-                                                            worldEditList.add(new RemoveBlock(world, (chunk.xPosition << 4) + x, y, (chunk.zPosition << 4) + z));
+                                                            if (Plugin.blockMetaToRemove.containsKey(block))
+                                                            {
+                                                                List<Integer> metaValues = Plugin.blockMetaToRemove.get(block);
+                                                                if (metaValues.contains(meta))
+                                                                {
+                                                                    worldEditList.add(new RemoveBlock(world, (chunk.xPosition << 4) + x, y, (chunk.zPosition << 4) + z));
+                                                                }
+                                                            }
+                                                            else
+                                                            {
+                                                                worldEditList.add(new RemoveBlock(world, (chunk.xPosition << 4) + x, y, (chunk.zPosition << 4) + z));
+                                                            }
+                                                        }
+                                                        else if (Plugin.blocksToReplace.containsKey(block))
+                                                        {
+                                                            worldEditList.add(new PlaceBlock(world, (chunk.xPosition << 4) + x, y, (chunk.zPosition << 4) + z, Plugin.blocksToReplace.get(block)));
+                                                        }
+                                                        else if (Plugin.blockMetaToReplace.containsKey(blockMeta))
+                                                        {
+                                                            worldEditList.add(new PlaceBlock(world, (chunk.xPosition << 4) + x, y, (chunk.zPosition << 4) + z, Plugin.blockMetaToReplace.get(block)));
                                                         }
                                                     }
-                                                    else
-                                                    {
-                                                        worldEditList.add(new RemoveBlock(world, (chunk.xPosition << 4) + x, y, (chunk.zPosition << 4) + z));
-                                                    }
-                                                }
-                                                else if (Plugin.blocksToReplace.containsKey(block))
-                                                {
-                                                    worldEditList.add(new PlaceBlock(world, (chunk.xPosition << 4) + x, y, (chunk.zPosition << 4) + z, Plugin.blocksToReplace.get(block)));
-                                                }
-                                                else if (Plugin.blocksToReplace.containsKey(blockMeta))
-                                                {
-                                                    worldEditList.add(new PlaceBlock(world, (chunk.xPosition << 4) + x, y, (chunk.zPosition << 4) + z, Plugin.blockMetaToReplace.get(block)));
                                                 }
                                             }
                                         }
                                     }
                                 }
-                            }
-                            catch (Exception e)
-                            {
-                                System.out.println("Failed to scan chunk " + chunk);
-                                e.printStackTrace();
-                            }
-                            synchronized (Plugin.handler.removalMapDump)
-                            {
-                                if (Plugin.handler.removalMapDump.containsKey(currentScanningWorld))
+                                catch (Exception e)
                                 {
-                                    Queue d = Plugin.handler.removalMapDump.get(currentScanningWorld);
-                                    d.addAll(worldEditList); //TODO ensure it doesn't contain block
-                                    Plugin.handler.removalMapDump.put(currentScanningWorld, d);
+                                    System.out.println("Failed to scan chunk " + chunk);
+                                    e.printStackTrace();
                                 }
-                                else
+                                synchronized (Plugin.handler.threadInbox)
                                 {
-                                    Queue d = new LinkedList();
-                                    d.addAll(worldEditList); //TODO ensure it doesn't contain block
-                                    Plugin.handler.removalMapDump.put(currentScanningWorld, d);
+                                    if (Plugin.handler.threadInbox.containsKey(currentScanningWorld))
+                                    {
+                                        Queue d = Plugin.handler.threadInbox.get(currentScanningWorld);
+                                        d.addAll(worldEditList); //TODO ensure it doesn't contain block
+                                        Plugin.handler.threadInbox.put(currentScanningWorld, d);
+                                    }
+                                    else
+                                    {
+                                        Queue d = new LinkedList();
+                                        d.addAll(worldEditList); //TODO ensure it doesn't contain block
+                                        Plugin.handler.threadInbox.put(currentScanningWorld, d);
+                                    }
                                 }
                             }
                         }

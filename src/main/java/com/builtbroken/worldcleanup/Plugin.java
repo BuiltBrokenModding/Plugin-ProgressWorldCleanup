@@ -123,7 +123,7 @@ public final class Plugin
                                 }
                             }
                         }
-                        else if (!name.contains("@"))
+                        else if (name.contains("@"))
                         {
                             String[] split = name.split("@");
                             name = split[0];
@@ -158,9 +158,9 @@ public final class Plugin
         }
 
         logger.info("Loading replace list...");
-        removeBlocks = config.getString("BlocksToRemove", Configuration.CATEGORY_GENERAL, "", "Replaces one block with another block, each entry must use this format [modName:block@meta > modName:block@meta] or [modName:block > modName:block@meta] in order to work. First part is the block to replace, second is what block to replace it with. Separate each entry with a ',' as a list, avoid spaces as well.");
+        removeBlocks = config.getString("BlocksToReplace", Configuration.CATEGORY_GENERAL, "", "Replaces one block with another block, each entry must use this format [modName:block@meta > modName:block@meta] or [modName:block > modName:block@meta] in order to work. First part is the block to replace, second is what block to replace it with. Separate each entry with a ',' as a list, avoid spaces as well.");
         removeBlocks.trim();
-        if(removeBlocks != null && removeBlocks.isEmpty())
+        if(removeBlocks != null && !removeBlocks.isEmpty())
         {
             String[] blocksByNames = removeBlocks.split(",");
             for (final String s : blocksByNames)
