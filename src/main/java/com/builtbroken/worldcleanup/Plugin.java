@@ -20,6 +20,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -38,6 +39,7 @@ public final class Plugin
 
     /** List of blocks to remove, is multi-threaded so ensure thread safe actions */
     public static final List<Block> blocksToRemove = new ArrayList();
+    public static final HashMap<Block, List<Integer>> blockMetaToRemove = new HashMap();
 
     @Mod.Instance("progressiveworldcleanup")
     public static Plugin instance;
@@ -56,53 +58,7 @@ public final class Plugin
     @Mod.EventHandler
     public void postInit(FMLPostInitializationEvent event)
     {
-        logger.info("Loading blocks from config...");
-        config.load();
-        TickHandler.blocksRemovedPerTick = config.getInt("BlocksToEditPerTick", Configuration.CATEGORY_GENERAL, TickHandler.blocksRemovedPerTick, 0, 10000, "Number of blocks to edit per tick, there are 20 ticks in a second. Keep this low to improve performance, increase to speed up the effect of the mod.");
-        String removeBlocks = config.getString("BlocksToRemove", Configuration.CATEGORY_GENERAL, "ThaumicTinkerer:fireOrder,ThaumicTinkerer:fireAir,ThaumicTinkerer:fireEarth,ThaumicTinkerer:fireChaos,ThaumicTinkerer:fireFire,ThaumicTinkerer:fireWater,AncientWarfareAutomation:windmill_blade,minecraft:tnt", "Add blocks to the list separated by a ',', any block in the list will be removed from the world over time.");
-        if (removeBlocks != null)
-        {
-            removeBlocks = removeBlocks.trim();
-            //TODO remove all spaces
-            if (!removeBlocks.isEmpty())
-            {
-                String[] blocksByName = removeBlocks.split(",");
-                for (String s : blocksByName)
-                {
-                    String name = s.trim();
-                    if (name.startsWith("@Ore:") || name.startsWith("@ore:"))
-                    {
-                        String oreName = name.replace("@Ore:", "").replace("@ore:", "");
-                        logger.info("\tOreName: " + oreName);
-
-                        List<ItemStack> stacks = OreDictionary.getOres(oreName, false);
-                        for(ItemStack stack : stacks)
-                        {
-                            if(stack != null && stack.getItem() instanceof ItemBlock)
-                            {
-                                blocksToRemove.add(((ItemBlock) stack.getItem()).field_150939_a);
-                                logger.info("\t\tAdded: " + ((ItemBlock) stack.getItem()).field_150939_a);
-                            }
-                        }
-                    }
-                    else if (!name.isEmpty())
-                    {
-                        Object object = Block.blockRegistry.getObject(name);
-                        if (object != null && object instanceof Block && object != Blocks.air)
-                        {
-                            blocksToRemove.add((Block) object);
-                            logger.info("\tAdded: " + object);
-                        }
-                        else
-                        {
-                            logger.error("\tError: " + name + " was not found in the block list");
-                        }
-                    }
-                }
-            }
-        }
-        config.save();
-        logger.info("Done...");
+        loadConfig();
     }
 
     @Mod.EventHandler
@@ -121,6 +77,119 @@ public final class Plugin
         {
             logger.error("Progress World Cleanup thread was not started as there are no blocks to remove. Add some to the config and restart for the mod to have an affect.");
         }
+    }
+
+    /**
+     * Called to load the config from disk
+     */
+    public void loadConfig()
+    {
+        logger.info("Loading blocks from config...");
+        config.load();
+        TickHandler.blocksRemovedPerTick = config.getInt("BlocksToEditPerTick", Configuration.CATEGORY_GENERAL, TickHandler.blocksRemovedPerTick, 0, 10000, "Number of blocks to edit per tick, there are 20 ticks in a second. Keep this low to improve performance, increase to speed up the effect of the mod.");
+        String removeBlocks = config.getString("BlocksToRemove", Configuration.CATEGORY_GENERAL, "ThaumicTinkerer:fireOrder,ThaumicTinkerer:fireAir,ThaumicTinkerer:fireEarth,ThaumicTinkerer:fireChaos,ThaumicTinkerer:fireFire,ThaumicTinkerer:fireWater,AncientWarfareAutomation:windmill_blade,minecraft:tnt", "Add blocks to the list separated by a ',', any block in the list will be removed from the world over time.");
+        if (removeBlocks != null)
+        {
+            removeBlocks = removeBlocks.trim();
+            //TODO remove all spaces
+            if (!removeBlocks.isEmpty())
+            {
+                String[] blocksByNames = removeBlocks.split(",");
+                for (final String s : blocksByNames)
+                {
+                    try
+                    {
+                        String name = s.trim();
+                        if (name.startsWith("*Ore:") || name.startsWith("*ore:"))
+                        {
+                            String oreName = name.replace("*Ore:", "").replace("*ore:", "");
+                            logger.info("\tOreName: " + oreName);
+
+                            List<ItemStack> stacks = OreDictionary.getOres(oreName, false);
+                            for (ItemStack stack : stacks)
+                            {
+                                if (stack != null && stack.getItem() instanceof ItemBlock)
+                                {
+                                    blocksToRemove.add(((ItemBlock) stack.getItem()).field_150939_a);
+                                    logger.info("\t\tAdded: " + ((ItemBlock) stack.getItem()).field_150939_a);
+                                }
+                            }
+                        }
+                        else if (!name.contains("@"))
+                        {
+                            String[] split = name.split("@");
+                            name = split[0];
+
+                            if(split[1].contains("-"))
+                            {
+                                split = split[1].split("-");
+                                int start = Integer.parseInt(split[0]);
+                                int end = Integer.parseInt(split[1]);
+                                for(;start <= end; start++)
+                                {
+                                    addBlockToRemove(name, start);
+                                }
+                            }
+                            //Add single meta value
+                            else
+                            {
+                                addBlockToRemove(name, Integer.parseInt(split[1]));
+                            }
+                        }
+                        else if (!name.isEmpty())
+                        {
+                            addBlockToRemove(name);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        logger.error("Failed to process entry " + s, e);
+                    }
+                }
+            }
+        }
+
+        config.save();
+        logger.info("Done...");
+    }
+
+    private Block addBlockToRemove(String name, int meta)
+    {
+        Block block = addBlockToRemove(name);
+        List<Integer> list = null;
+        if (!blockMetaToRemove.containsKey(block))
+        {
+            list = blockMetaToRemove.get(block);
+        }
+        if (list == null)
+        {
+            list = new ArrayList();
+        }
+        if (!list.contains(meta))
+        {
+            list.add(meta);
+        }
+        else
+        {
+            logger.error("Meta value[" + meta + "] for block " + block + " is already contained.");
+        }
+        return block;
+    }
+
+    private Block addBlockToRemove(String name)
+    {
+        Object object = Block.blockRegistry.getObject(name);
+        if (object != null && object instanceof Block && object != Blocks.air)
+        {
+            blocksToRemove.add((Block) object);
+            logger.info("\tAdded: " + object);
+            return (Block) object;
+        }
+        else
+        {
+            logger.error("\tError: " + name + " was not found in the block list");
+        }
+        return null;
     }
 
     @Mod.EventHandler
