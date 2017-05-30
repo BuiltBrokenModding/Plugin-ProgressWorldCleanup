@@ -9,6 +9,7 @@ import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
 import net.minecraftforge.fml.common.event.FMLServerStoppingEvent;
 import net.minecraft.block.Block;
+import net.minecraft.item.ItemBlock;
 import net.minecraft.command.ICommandManager;
 import net.minecraft.command.ServerCommandManager;
 import net.minecraft.init.Blocks;
@@ -119,8 +120,8 @@ public final class Plugin
                             {
                                 if (stack != null && stack.getItem() instanceof ItemBlock)
                                 {
-                                    blocksToRemove.add(((ItemBlock) stack.getItem()).field_150939_a);
-                                    logger.info("\t\tAdded: " + ((ItemBlock) stack.getItem()).field_150939_a);
+                                    blocksToRemove.add(((ItemBlock) stack.getItem()).getBlock());
+                                    logger.info("\t\tAdded: " + ((ItemBlock) stack.getItem()).getBlock());
                                 }
                             }
                         }

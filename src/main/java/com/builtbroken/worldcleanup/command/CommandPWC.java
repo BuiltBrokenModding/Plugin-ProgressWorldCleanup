@@ -82,7 +82,7 @@ public class CommandPWC extends CommandBase
         }
     }
 
-    @Override
+    //@Override
     public List addTabCompletionOptions(ICommandSender p_71516_1_, String[] p_71516_2_)
     {
         //TODO implement lazy mode :)

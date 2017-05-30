@@ -67,9 +67,9 @@ public final class ThreadWorldScanner extends Thread
                                 List<RemoveBlock> worldEditList = new ArrayList();
                                 try
                                 {
-                                    if (chunk.isChunkLoaded && chunk.isTerrainPopulated)
+                                    if (chunk.isChunkLoaded && chunk.isTerrainPopulated())
                                     {
-                                        int[] heightMap = chunk.heightMap;
+                                        int[] heightMap = chunk.getHeightMap();
                                         for (int x = 0; x < 16 && shouldRun; x++)
                                         {
                                             for (int z = 0; z < 16 && shouldRun; z++)

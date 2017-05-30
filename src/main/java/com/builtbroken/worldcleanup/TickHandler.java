@@ -40,7 +40,7 @@ public class TickHandler
         if (event.side == Side.SERVER && event.phase == TickEvent.Phase.END)
         {
             //Avoid updating map often as this can lock the main thread every so often
-            if (event.world.provider.dimensionId == 0)
+            if (event.world.provider.getDimensionId() == 0)
             {
                 ticks++;
                 if (ticks % 1000 == 0)
@@ -67,9 +67,9 @@ public class TickHandler
                 }
             }
 
-            if (worldToActions.containsKey(event.world.provider.dimensionId))
+            if (worldToActions.containsKey(event.world.provider.getDimensionId()))
             {
-                Queue<RemoveBlock> list = worldToActions.get(event.world.provider.dimensionId);
+                Queue<RemoveBlock> list = worldToActions.get(event.world.provider.getDimensionId());
                 for (int i = 0; i < blocksRemovedPerTick && !list.isEmpty(); i++)
                 {
                     if (!list.isEmpty())
@@ -83,7 +83,7 @@ public class TickHandler
                 }
                 if (list.isEmpty())
                 {
-                    worldToActions.remove(event.world.provider.dimensionId);
+                    worldToActions.remove(event.world.provider.getDimensionId());
                 }
             }
         }
