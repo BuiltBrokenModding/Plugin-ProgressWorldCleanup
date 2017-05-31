@@ -13,7 +13,6 @@ import net.minecraft.item.ItemBlock;
 import net.minecraft.command.ICommandManager;
 import net.minecraft.command.ServerCommandManager;
 import net.minecraft.init.Blocks;
-import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.oredict.OreDictionary;
@@ -115,7 +114,7 @@ public final class Plugin
                             String oreName = name.replace("*Ore:", "").replace("*ore:", "");
                             logger.info("\tOreName: " + oreName);
 
-                            List<ItemStack> stacks = OreDictionary.getOres(oreName, false);
+                            List<ItemStack> stacks = OreDictionary.getOres(oreName);
                             for (ItemStack stack : stacks)
                             {
                                 if (stack != null && stack.getItem() instanceof ItemBlock)
